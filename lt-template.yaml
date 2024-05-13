@@ -1,0 +1,98 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: CloudFormation template for Launch Template and Auto Scaling Group
+
+# Parameters
+Parameters:
+  ProjectName:
+    Type: String
+    Default: DeepGram
+    Description: Project name
+  Region:
+    Type: String
+    Default: us-east-2
+    Description: Region
+  AmiId:
+    Type: String
+    Description: ID of the AMI
+    Default: ami-0f11dac8e1dde89cf
+  InstanceType:
+    Type: String
+    Description: Instance Type
+    Default: g4dn.2xlarge
+  SecurityGroupIds:
+    Type: String
+    Description: IDs of the Security Groups
+    Default: sg-0f419e1a100e24dce
+  KeyPairName:
+    Type: String
+    Description: Name of the Key Pair
+    Default: DeepgramInstanceKey
+  VpcId:
+    Type: String
+    Description: ID of the VPC
+    Default: vpc-016d550cf883b7e43
+  AutoScalingGroupName:
+    Type: String
+    Description: Name of the Auto Scaling Group
+    Default: Deepgram-ASG-1
+  Min:
+    Type: Number
+    Description: Minimum size of the Auto Scaling Group
+    Default: 1
+  Max:
+    Type: Number
+    Description: Maximum size of the Auto Scaling Group
+    Default: 3
+  Desired:
+    Type: Number
+    Description: Desired capacity of the Auto Scaling Group
+    Default: 1
+  TargetGroup:
+    Type: String
+    Description: Name of the Target Group
+    Default: Deepgram-ALB-TargetGroup
+  Subnet:
+    Type: String
+    Description: ID of the subnet
+    Default: subnet-0e90b992a27dad2d5
+
+# Launch template
+Resources:
+  
+  DeepGramLaunchTemplate:
+    Type: AWS::EC2::LaunchTemplate
+    Properties:
+      LaunchTemplateName: !Sub ${ProjectName}-LaunchTemplate
+      LaunchTemplateData:
+        ImageId: !Ref AmiId
+        InstanceType: !Ref InstanceType
+        KeyName: !Ref KeyPairName
+        NetworkInterfaces:
+          - DeviceIndex: '0'
+            AssociatePublicIpAddress: 'true'
+            SubnetId: !Ref Subnet
+            Groups:
+              - !Ref SecurityGroupIds 
+            
+
+  DeepgramAutoScalingGroup:
+    Type: AWS::AutoScaling::AutoScalingGroup
+    Properties:
+      AutoScalingGroupName: !Ref AutoScalingGroupName
+      MinSize: !Ref Min
+      MaxSize: !Ref Max
+      DesiredCapacity: !Ref Desired
+      LaunchTemplate:
+        LaunchTemplateId: !Ref DeepGramLaunchTemplate
+        Version: !GetAtt DeepGramLaunchTemplate.LatestVersionNumber
+      TargetGroupARNs:
+        - !Sub arn:aws:elasticloadbalancing:${Region}:851725310014:targetgroup/${TargetGroup}/eeb1e4f1c75ffddb
+
+# Outputs
+Outputs:
+  AutoScalingGroupOutput:
+    Description: Output for the created Auto Scaling Group
+    Value: !Ref DeepgramAutoScalingGroup
+  LaunchTemplateOutput:
+    Description: Output for the created Launch Template
+    Value: !Ref DeepGramLaunchTemplate

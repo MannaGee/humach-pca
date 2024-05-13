@@ -1,0 +1,97 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: SAM template for creating an Amazon Cognito User Pool
+
+Parameters:
+  ProjectName: 
+    Type: String
+    Default: Humach-PCA
+    Description: Name of the Project
+  EnvironmentName: 
+    Type: String
+    Default: dev
+    Description: Name of Environment 
+  UserPoolName:
+    Type: String
+    Default: CognitoUserPool 
+    Description: Name for Cognito user pool 
+  ClientName:
+    Type: String
+    Default: MyUserPoolClient 
+    Description: Name for Cognito user pool Client
+  IdentityPoolName:
+    Type: String
+    Default: MyIdentityPool 
+    Description: Name for Cognito identity pool
+  AliasAttributes:
+    Type: list(String)
+    Default: email
+    Description:  
+  AutoVerifiedAttributes:
+    Type: list(String)
+    Default: email
+    Description: 
+  GenerateSecret:
+    Type: boolean
+    Default: false
+    Description:
+  ExplicitAuthFlows:
+    Type: list(String) 
+    Default: ADMIN_NO_SRP_AUTH
+    Description:
+  AllowUnauthenticatedIdentities:
+    Type: boolean
+    Default: false 
+    Description: 
+
+
+Resources:
+  CognitoUserPool:
+    Type: AWS::Cognito::UserPool
+    Properties:
+      UserPoolName: !Sub "${ProjectName}-${EnvironmentName}-${UserPoolName}"
+      AliasAttributes:
+        - !Ref AliasAttributes
+      AutoVerifiedAttributes:
+        - !Ref AutoVerifiedAttributes
+      Policies:
+        PasswordPolicy:
+          MinimumLength: 8
+          RequireLowercase: true
+          RequireNumbers: true
+          RequireSymbols: true
+          RequireUppercase: true
+
+  CognitoUserPoolClient:
+    Type: AWS::Cognito::UserPoolClient
+    Properties:
+      ClientName: !Sub "${ProjectName}-${EnvironmentName}-${ClientName}"
+      UserPoolId: !Ref CognitoUserPool
+      GenerateSecret: !Ref GenerateSecret
+      ExplicitAuthFlows: !Ref ExplicitAuthFlows
+
+  CognitoIdentityPool:
+    Type: AWS::Cognito::IdentityPool
+    Properties:
+      IdentityPoolName: !Sub "${ProjectName}-${EnvironmentName}-${IdentityPoolName}"
+      AllowUnauthenticatedIdentities: !Ref AllowUnauthenticatedIdentities
+      CognitoIdentityProviders:
+        - ClientId: !Ref CognitoUserPoolClient
+          ProviderName: !GetAtt CognitoUserPool.ProviderName
+
+Outputs:
+  UserPoolId:
+    Description: The User Pool ID
+    Value: !Ref CognitoUserPool
+    Export:
+      Name: !Sub "${AWS::StackName}-UserPoolId"
+
+  UserPoolClientId:
+    Description: The User Pool Client ID
+    Value: !Ref CognitoUserPoolClient
+    Export:
+      Name: !Sub "${AWS::StackName}-UserPoolClientId"
+
+  IdentityPoolId:
+    Description: The Identity Pool ID
+    Value: !Ref CognitoIdentityPool

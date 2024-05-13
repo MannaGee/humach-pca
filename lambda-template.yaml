@@ -1,0 +1,54 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: A simple SAM template to invoke a Lambda function
+
+Parameters:
+  ProjectName:
+    Type: String
+    Default: Humach-AMP
+    Description: Name of the project
+  EnvironmentName:
+    Type: String
+    Default: dev
+    Description: Environment name
+  FunctionName:
+    Type: String
+    Default: Sample-Function 
+    Description: 
+  Timeout:
+    Type: Number
+    Default: 15
+    Descrption: Lamda Funtion Timeout
+  Handler: 
+    Type: String
+    Default: index.handler
+    Description: Name of handler file
+  Runtime: 
+    Type: String
+    Default: nodejs18.x
+    Description: Lambda Function Runtime
+  DynamoTableName:
+    Type: String
+    Default: 
+
+  
+
+Resources:
+  MyFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: ./src/my-function
+      Timeout: !Ref Timeout 
+      FunctionName: !Sub "${ProjectName}-${EnvironmentName}-${FunctionName}"
+      Handler: !Ref Handler
+      Runtime: !Ref Runtime
+      Environment:
+        Variables:
+          TableName: !Ref DynamoTableName
+          ENV: !Ref EnvironmentName 
+      
+
+Outputs:
+  MyFunctionArn:
+    Description: The ARN of the Lambda function
+    Value: !GetAtt MyFunction.Arn
